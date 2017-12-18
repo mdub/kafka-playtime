@@ -4,6 +4,9 @@ require "clamp"
 require "json"
 require "ruby-kafka"
 
+class InvalidCommand < StandardError
+end
+
 Clamp do
   option ["-k", "--kafka-broker"], "ADDRESS", "Kafka broker address",
          multivalued: true,
@@ -15,9 +18,12 @@ Clamp do
   subcommand "control", "control a robot" do
     def execute
       $stdin.each do |line|
-        command, *args = line.upcase.split(" ")
-        event = { robot: id, command: command, args: args }
-        kafka.deliver_message(JSON.dump(event), topic: kafka_commands_topic)
+        begin
+          event = parse_command(line.chomp).merge(robot: id)
+          kafka.deliver_message(JSON.dump(event), topic: kafka_commands_topic)
+        rescue InvalidCommand => e
+          puts "WAT?"
+        end
       end
     end
   end
@@ -37,4 +43,20 @@ Clamp do
   def kafka_commands_topic
     "robot-commands"
   end
+
+  def parse_command(input)
+    command, *args = input.downcase.split(" ")
+    # event = { robot: id, command: command, args: args }
+    case command
+    when /^(?<command>place) (?<x>\d) (?<y>\d) (?<direction>[news])/
+      { type: $~[:command], event: { x: $~[:x].to_i, y: $~[:y].to_i, direction: $~[:direction] } }
+    when "move"
+      { type: command, event: {} }
+    when "left", "right"
+      { type: "rotate", event: { direction: command } }
+    else
+      raise InvalidCommand, input
+    end
+  end
+
 end
