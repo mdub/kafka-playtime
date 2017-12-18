@@ -17,13 +17,16 @@ Clamp do
 
   subcommand "control", "control a robot" do
     def execute
+      print '> '
       $stdin.each do |line|
         begin
-          event = parse_command(line.chomp).merge(robot: id)
+          event = { robot: id }.merge(parse_command(line.chomp))
           kafka.deliver_message(JSON.dump(event), topic: kafka_commands_topic)
+          puts "OK"
         rescue InvalidCommand => e
           puts "WAT?"
         end
+        print '> '
       end
     end
   end
@@ -45,15 +48,13 @@ Clamp do
   end
 
   def parse_command(input)
-    command, *args = input.downcase.split(" ")
-    # event = { robot: id, command: command, args: args }
-    case command
-    when /^(?<command>place) (?<x>\d) (?<y>\d) (?<direction>[news])/
+    case input
+    when /^(?<command>place) (?<x>\d) (?<y>\d) (?<direction>[news])$/
       { type: $~[:command], event: { x: $~[:x].to_i, y: $~[:y].to_i, direction: $~[:direction] } }
     when "move"
-      { type: command, event: {} }
+      { type: input, event: {} }
     when "left", "right"
-      { type: "rotate", event: { direction: command } }
+      { type: "rotate", event: { direction: input } }
     else
       raise InvalidCommand, input
     end
