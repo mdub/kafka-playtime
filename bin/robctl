@@ -1,6 +1,7 @@
 #! /usr/bin/env ruby
 
 require "clamp"
+require "json"
 require "ruby-kafka"
 
 Clamp do
@@ -14,7 +15,9 @@ Clamp do
   subcommand "control", "control a robot" do
     def execute
       $stdin.each do |line|
-        kafka.deliver_message(line.chomp, topic: kafka_commands_topic)
+        command, *args = line.upcase.split(" ")
+        event = { robot: id, command: command, args: args }
+        kafka.deliver_message(JSON.dump(event), topic: kafka_commands_topic)
       end
     end
   end
