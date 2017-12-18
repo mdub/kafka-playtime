@@ -5,7 +5,7 @@ require "ruby-kafka"
 
 Clamp do
   option ["-k", "--kafka-broker"], "ADDRESS", "Kafka broker address",
-         multi_valued: true,
+         multivalued: true,
          environment_variable: "KAFKA_BROKER",
          required: true
 
@@ -14,7 +14,7 @@ Clamp do
   subcommand "control", "control a robot" do
     def execute
       $stdin.each do |line|
-        kafka.deliver_message(line, topic: kafka_commands_topic)
+        kafka.deliver_message(line.chomp, topic: kafka_commands_topic)
       end
     end
   end
