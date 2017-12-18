@@ -5,4 +5,4 @@ if [ -z "${1-}" ]; then
   exit 1
 fi
 
-/usr/bin/kafka-console-consumer --bootstrap-server $KAFKA_ADVERTISED_LISTENERS --topic $1 --from-beginning
+/usr/bin/kafka-console-consumer --broker-list $KAFKA_ADVERTISED_LISTENERS --topic $1 --from-beginning

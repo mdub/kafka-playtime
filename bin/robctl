@@ -1,0 +1,43 @@
+#! /usr/bin/env ruby
+
+require "clamp"
+require "ruby-kafka"
+
+Clamp do
+
+  option ["-k", "--kafka-broker"], "ADDRESS", "Kafka broker address",
+         multi_valued: true,
+         environment_variable: "KAFKA_BROKER",
+         required: true
+
+  parameter "ID", "robot ID"
+
+  subcommand "control", "control a robot" do
+
+    def execute
+      $stdin.each do |line|
+        kafka.deliver_message(line, topic: kafka_commands_topic)
+      end
+    end
+
+  end
+
+  subcommand "watch", "observe state of the world" do
+
+    def execute
+      puts "eventually I'll print the board"
+    end
+       
+  end
+
+  private
+
+  def kafka
+    @kafka ||= Kafka.new(seed_brokers: kafka_broker_list)
+  end
+
+  def kafka_commands_topic
+    "robot-commands"
+  end
+
+end

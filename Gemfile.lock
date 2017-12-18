@@ -1,0 +1,15 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    clamp (1.1.2)
+    ruby-kafka (0.5.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  clamp
+  ruby-kafka
+
+BUNDLED WITH
+   1.16.0
