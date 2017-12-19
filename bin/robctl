@@ -62,9 +62,12 @@ Clamp do
           consumer.stop
         end
         consumer.each_message do |message|
-          p message.to_s
-          event = JSON.load(message.to_s)
-          p event
+          begin
+            puts message.value
+          rescue StandardError => e
+            puts e, e.backtrace
+            exit 1
+          end
         end
       end
 
@@ -88,18 +91,12 @@ Clamp do
         puts "Nearly ready"
         consumer.each_message do |message|
           begin
-            p 1
             event = JSON.load(message.value)
-            p 2
-            p event
-            p 3
             world.process(event)
-            p 4
+            puts "\n" * 3
             puts world.to_s
-            p 5
           rescue StandardError => e
-            puts e
-            puts e.backtrace
+            puts e, e.backtrace
             exit 1
           end
         end
