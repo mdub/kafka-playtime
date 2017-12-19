@@ -3,6 +3,7 @@
 require "clamp"
 require "json"
 require "ruby-kafka"
+require "securerandom"
 
 class InvalidCommand < StandardError
 end
@@ -34,27 +35,37 @@ Clamp do
 
   end
 
-  subcommand "update-states", "update states based on events" do
+  subcommand "watch", "observe updates" do
 
-    option "--replay", :flag, "replay all robot events"
+    option ["-g", "--group"], "GROUP-ID", "consumer group id",
+           attribute_name: :consumer_group_id
+    
+    option ["--[no-]history"], :flag, "start from beginning"
+           
+    def consumer
+      @consumer ||= kafka.consumer(group_id: consumer_group_id)
+    end
 
-    def execute
+    def default_consumer_group_id
+      SecureRandom.uuid
+    end
 
-      consumer = kafka.consumer(group_id: "update-robot-states")
-      consumer.subscribe(kafka_commands_topic, start_from_beginning: replay?)
-      trap("TERM") do 
-        puts "Shutting down"
-        consumer.stop
-      end
-      consumer.each_message do |message|
-        event = JSON.load(message.value)
-        p event
-        # puts message.topic, message.partition
-        # puts message.offset, message.key, message.value
+    subcommand "commands", "watch robot-commands" do
+  
+      def execute
+        consumer.subscribe(kafka_commands_topic, start_from_beginning: history?)
+        trap("TERM") do 
+          puts "Shutting down"
+          consumer.stop
+        end
+        consumer.each_message do |message|
+          event = JSON.load(message.value)
+          p event
+        end
       end
 
     end
-    
+
   end
 
   subcommand "watch", "observe state of the world" do
