@@ -36,6 +36,20 @@ To watch all raw events, starting from the beginning:
 ./auto/dev/console scripts/watch
 ```
 
+### Watch robot commands (same as events)
+
+To watch all raw events, from now onwards:
+
+```bash
+./auto/dev/robctl watch commands
+```
+
+Starting from the beginning:
+
+```bash
+./auto/dev/robctl watch commands --history
+```
+
 ### Watch board
 
 To watch the toy robot world, viewing the board and all robots:
