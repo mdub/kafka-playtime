@@ -5,6 +5,9 @@ require "json"
 require "ruby-kafka"
 require "securerandom"
 
+require_relative "../lib/bot/state"
+require_relative "../lib/bot/world"
+
 class InvalidCommand < StandardError
 end
 
@@ -59,19 +62,51 @@ Clamp do
           consumer.stop
         end
         consumer.each_message do |message|
-          event = JSON.load(message.value)
+          p message.to_s
+          event = JSON.load(message.to_s)
           p event
         end
       end
 
     end
 
-  end
+    subcommand "world", "observe the general state of the world" do
 
-  subcommand "watch", "observe state of the world" do
-    def execute
-      puts "eventually I'll print the board"
+      # option ["-g", "--group"], "GROUP-ID", "consumer group id",
+      #        attribute_name: :consumer_group_id
+    
+      option ["--[no-]history"], :flag, "start from beginning"
+
+      def execute
+        world = Bot::World.new
+        consumer = kafka.consumer(group_id: SecureRandom.uuid)
+        consumer.subscribe(kafka_commands_topic, start_from_beginning: history?)
+        trap("TERM") do 
+          puts "Shutting down"
+          consumer.stop
+        end
+        puts "Nearly ready"
+        consumer.each_message do |message|
+          begin
+            p 1
+            event = JSON.load(message.value)
+            p 2
+            p event
+            p 3
+            world.process(event)
+            p 4
+            puts world.to_s
+            p 5
+          rescue StandardError => e
+            puts e
+            puts e.backtrace
+            exit 1
+          end
+        end
+      end
+
     end
+
   end
 
   private
@@ -92,10 +127,8 @@ Clamp do
     case input
     when /^(?<command>place) (?<x>\d) (?<y>\d) (?<direction>[news])$/
       { type: $~[:command], event: { x: $~[:x].to_i, y: $~[:y].to_i, direction: $~[:direction] } }
-    when "move"
+    when "move", "left", "right"
       { type: input, event: {} }
-    when "left", "right"
-      { type: "rotate", event: { direction: input } }
     else
       raise InvalidCommand, input
     end
