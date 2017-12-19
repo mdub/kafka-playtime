@@ -13,9 +13,11 @@ Clamp do
          environment_variable: "KAFKA_BROKER",
          required: true
 
-  parameter "ID", "robot ID"
 
   subcommand "control", "control a robot" do
+
+    parameter "ID", "robot ID"
+
     def execute
       print '> '
       $stdin.each do |line|
@@ -29,6 +31,30 @@ Clamp do
         print '> '
       end
     end
+
+  end
+
+  subcommand "update-states", "update states based on events" do
+
+    option "--replay", :flag, "replay all robot events"
+
+    def execute
+
+      consumer = kafka.consumer(group_id: "update-robot-states")
+      consumer.subscribe(kafka_commands_topic, start_from_beginning: replay?)
+      trap("TERM") do 
+        puts "Shutting down"
+        consumer.stop
+      end
+      consumer.each_message do |message|
+        event = JSON.load(message.value)
+        p event
+        # puts message.topic, message.partition
+        # puts message.offset, message.key, message.value
+      end
+
+    end
+    
   end
 
   subcommand "watch", "observe state of the world" do
@@ -45,6 +71,10 @@ Clamp do
 
   def kafka_commands_topic
     "robot-commands"
+  end
+
+  def kafka_states_topic
+    "robot-states"
   end
 
   def parse_command(input)

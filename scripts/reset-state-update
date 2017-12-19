@@ -1,0 +1,6 @@
+#! /bin/bash -eu
+
+/usr/bin/kafka-consumer-groups \
+  --bootstrap-server $KAFKA_ADVERTISED_LISTENERS \
+  --group update-robot-states \
+  --reset-offsets --to-earliest --all-topics --execute
