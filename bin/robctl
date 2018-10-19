@@ -42,9 +42,9 @@ Clamp do
 
     option ["-g", "--group"], "GROUP-ID", "consumer group id",
            attribute_name: :consumer_group_id
-    
+
     option ["--[no-]history"], :flag, "start from beginning"
-           
+
     def consumer
       @consumer ||= kafka.consumer(group_id: consumer_group_id)
     end
@@ -54,10 +54,10 @@ Clamp do
     end
 
     subcommand "commands", "watch robot-commands" do
-  
+
       def execute
         consumer.subscribe(kafka_commands_topic, start_from_beginning: history?)
-        trap("TERM") do 
+        trap("TERM") do
           puts "Shutting down"
           consumer.stop
         end
@@ -75,16 +75,11 @@ Clamp do
 
     subcommand "world", "observe the general state of the world" do
 
-      # option ["-g", "--group"], "GROUP-ID", "consumer group id",
-      #        attribute_name: :consumer_group_id
-    
-      option ["--[no-]history"], :flag, "start from beginning"
-
       def execute
         world = Bot::World.new
         consumer = kafka.consumer(group_id: SecureRandom.uuid)
-        consumer.subscribe(kafka_commands_topic, start_from_beginning: history?)
-        trap("TERM") do 
+        consumer.subscribe(kafka_commands_topic, start_from_beginning: true)
+        trap("TERM") do
           puts "Shutting down"
           consumer.stop
         end
